@@ -93,6 +93,73 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     
 });
 
+regd_users.put("/auth/review/:isbn", (req, res) => {
+    const isbn = req.params.isbn;
+    // Extract the review from the query string (e.g., /auth/review/123?review=Great book!)
+    const reviewText = req.query.review;
+    
+    // Retrieve username from session (Ensure your session setup stores this on login)
+    const username = req.session.authorization?.username;
+
+    // 1. Validation checks
+    if (!username) {
+        return res.status(403).json({ message: "User not logged in." });
+    }
+    if (!reviewText) {
+        return res.status(400).json({ message: "Review content is required in query parameters." });
+    }
+    if (!books[isbn]) {
+        return res.status(404).json({ message: "Book not found." });
+    }
+    // 2. Initialize the reviews object for this book if it doesn't exist yet
+    if (!books[isbn].reviews) {
+        books[isbn].reviews = {};
+    }
+
+    // 3. Add or modify the review
+    // If username already exists as a key, this overwrites it (modifies it).
+    // If username does not exist, it creates a new key-value pair (adds it).
+    books[isbn].reviews[username] = reviewText;
+
+    // 4. Send back success response
+    return res.status(200).json({ 
+        message: `Review successfully added/updated for ISBN ${isbn} by user ${username}.`,
+        reviews: books[isbn].reviews
+    });
+    
+});
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const isbn = req.params.isbn;
+    
+    // Retrieve username from session (Ensure your session setup stores this on login)
+    const username = req.session.authorization?.username;
+
+    // 1. Validation checks
+    if (!username) {
+        return res.status(403).json({ message: "User not logged in." });
+    }
+    
+    
+    if (!books[isbn]) {
+        return res.status(404).json({ message: "Book not found." });
+    }
+   
+    if (books[isbn].reviews && books[isbn].reviews[username]){
+        delete books[isbn].reviews[username];
+    }
+    else{
+        return res.status(404).json({ message: `No review found for user ${username} under this ISBN.` });
+    }
+    
+    // 4. Send back success response
+    return res.status(200).json({ 
+        message: `Review successfully deleted for ISBN ${isbn} by user ${username}.`,
+        reviews: books[isbn].reviews
+    });
+    
+});
+
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
