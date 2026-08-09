@@ -25,19 +25,39 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
- res.send(JSON.stringify(books,null,4));
+public_users.get('/', function (req, res) {
+    // 1. Create a promise that instantly resolves with the books data
+    Promise.resolve(books)
+      .then((booksData) => {
+        // 2. This runs when the promise resolves successfully
+        return res.status(200).json(booksData);
+      })
+      .catch((error) => {
+        // 3. This catches any unexpected formatting or server errors
+        console.error("Error processing books:", error.message);
+        return res.status(500).json({ message: "Server error retrieving books" });
+      });
+  });
   
-});
 
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  const ISBN = req.params.isbn;
-  res.send(books[ISBN]);
- });
+public_users.get('/isbn/:isbn', function (req, res) {
+    const ISBN = req.params.isbn;
+    const book = books[ISBN];
+    Promise.resolve(book)
+      .then((booksData) => {
+        // 2. This runs when the promise resolves successfully
+        return res.status(200).json(booksData);
+      })
+      .catch((error) => {
+        // 3. This catches any unexpected formatting or server errors
+        console.error("Error processing books:", error.message);
+        return res.status(500).json({ message: "Server error retrieving book" });
+      });
+});
   
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
+public_users.get('/author/:author', function (req, res) {
  const authorparam = req.params.author;
  const bookkeys = Object.keys(books);
  const booksbyauthor=[];
@@ -45,17 +65,20 @@ public_users.get('/author/:author',function (req, res) {
     if (books[key].author.toLowerCase() === authorparam.toLowerCase()) {
         booksbyauthor.push(books[key]);
     }
-})
- if(booksbyauthor.length>0){
-    res.status(200).json(booksbyauthor);
- }
- else{
-    res.status(404).json("Unable to find author");
- }
+});
+ Promise.resolve(booksbyauthor)
+   .then((bookData)=>{
+     res.status(200).json(bookData)
+   })
+   .catch((error)=>{
+        console.error("Error processing books:", error.message);
+        return res.status(500).json({ message: "Server error retrieving book" });
+   });
+ 
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
+public_users.get('/title/:title', function (req, res) {
  const titleparam = req.params.title;
  const bookkeys = Object.keys(books);
  const booksbytitle=[];
@@ -63,14 +86,16 @@ public_users.get('/title/:title',function (req, res) {
     if (books[key].title.toLowerCase() === titleparam.toLowerCase()) {
         booksbytitle.push(books[key]);
     }
-})
- if(booksbytitle.length>0){
-    res.status(200).json(booksbytitle);
- }
- else{
-    res.status(404).json("Unable to find title");
- }
-  
+});
+ Promise.resolve(booksbytitle)
+  .then((bookData)=>{
+    res.status(200).json(bookData)
+  })
+  .catch((error)=>{
+        console.error("Error processing books:", error.message);
+        return res.status(500).json({ message: "Server error retrieving book" });
+  })
+ 
 });
 
 //  Get book review
